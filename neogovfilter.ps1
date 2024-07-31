@@ -53,36 +53,36 @@ catch {
 }
 
 ## Gets Active Employees into a JSON Array ##
-$data = $response | ConvertTo-Json
-
+$data = $response | ConvertTo-Json | Set-Content -Path .\"response.json"
+$data = Get-Content -Path .\"response.json" -Raw | ConvertFrom-Json
 $jsonData = @()
-for ($i = 0; $i -lt $data.value.Count; $i++) {
-    $firstname = $data.value[$i].firstName
-    $lastname = $data.value[$i].lastName
+foreach ($item in $data) {
+    $firstname = $item[0].firstname
+    $lastname = $item[0].lastname
 
-    [bool]$activated = $data.value[$i].active
+    $activated = $item[0].active
 
-    $manager = $data.value[$i].directmanager.fullname
-    $position = $data.value[$i].position.title
-    $department = $data.value[$i].department.name
+    $manager = $item[0].directmanager.fullname
+    $position = $item[0].position.title
+    $department = $item[0].department.name
     
     # Custom User Object
     $user = [PSCustomObject]@{
-        Name       = "$lastname, $firstname"
-        FirstName  = "$($firstname)"
-        LastName   = "$($lastname)"
-        Manager    = "$($manager)"
-        Position   = "$($position)"
+        Name = "$lastname, $firstname"
+        FirstName = "$($firstname)"
+        LastName = "$($lastname)"
+        Manager = "$($manager)"
+        Position = "$($position)"
         Department = "$($department)"
+        Active = "$($activated)"
     }
-    if ($activated -eq $true) {
+    if ($activated -eq "False") {
         $jsonData += $user
     }
-    
 }
 
-$converted = $jsonData | ConvertTo-Json
-Write-Host $converted
+
+$jsonData | ConvertTo-Json | Set-Content -Path .\"neogov.json"
 
 
 try {
@@ -106,6 +106,7 @@ catch {
 }
 
 
+
 #--------------------Cleaning JSON--------------------#
 $precleaned = Get-Content -Path .\"adusers.json" -Raw | ConvertFrom-Json
 
@@ -120,31 +121,26 @@ $precleaned | ConvertTo-Json | Set-Content -Path .\"adusers.json"
 
 #--------------------Gets List of Users that are inconsistent between the Active Directory and NEOGOV--------------------#
 
-$outdatedUsers = Get-Content -Path .\"adusers.json" -Raw | ConvertFrom-Json 
-$updatedUsers = $converted
+$updatedUsers = Get-Content -Path .\"adusers.json" -Raw | ConvertFrom-Json 
+$outdatedUsers = Get-Content -Path .\"neogov.json" -Raw | ConvertFrom-Json
 
-## Sorting Logic
-$outdatedUsersList = [System.Collections.ArrayList]@()
-$updatedUsersList = [System.Collections.ArrayList]@()
+$outdatedUsersNames = $outdatedUsers | ForEach-Object { $_.Name }
+$updatedUsersNames = $updatedUsers | ForEach-Object { $_.Name }
 
-foreach ($user in $outdatedUsers) {
-    $outdatedUsersList.Add($user.Name)
-}
-
-
-foreach ($user in $updatedUsers) {
-    $updatedUsersList.Add($user.Name)
-}
-##
-
-Write-Host "outdatedUsersList count: $($outdatedUsersList.Count)"
-Write-Host "updatedUsersList count: $($updatedUsersList.Count)"
-
+Write-Host "outdatedUsersList count: $($outdatedUsersNames.Count)"
+Write-Host "updatedUsersList count: $($updatedUsersNames.Count)"
 
 # Compiles Removed Users into List
-$removedUsers = Compare-Object -ReferenceObject $outdatedUsersList -DifferenceObject $updatedUsersList | 
-Where-Object { $_.SideIndicator -eq '<=' } | 
-Select-Object -ExpandProperty InputObject
+$removedUsers = $outdatedUsersNames | Where-Object { $updatedUsersNames -contains $_ }
+
+$removedUserObjects = $removedUsers | ForEach-Object { [PSCustomObject]@{ Name = $_ } }
+
 
 # Puts list into JSON File Format
-$removedUsers | ConvertTo-Json | Set-Content -Path .\"inconsistent_users.json"
+$removedUserObjects | ConvertTo-Json | Set-Content -Path .\"inconsistent_users.json"
+
+# Cleanup:
+Remove-Item -Path .\"response.json" -Force
+Remove-Item -Path .\"adusers.json" -Force
+Remove-Item -Path .\"neogov.json" -Force
+
