@@ -1,0 +1,1 @@
+This is a project that I created in my internship with the Town of Vienna. This was created to solve a security issue with users that were still active in Active Directory, but are no longer employees. I will leave this open source and able to be downloaded and used by other organizations if needed. Read the 'README.txt' for detailed instructions.
