@@ -1,0 +1,19 @@
+!!!! 
+Enter in a Username and Password for a NEOGOV account that has Perform Access (A Perform account) into 'config.json', surrounded by double quotes. Config File should 
+read like this;
+
+{
+    "username" : "yourUserNameHere",
+    "password" : "yourPasswordHere"
+}
+
+These credentials are securely encoded upon the 'Filter.bat' being ran. Keep 'config.json' and the rest of the files in this folder on a secured drive or OneDrive Folder.
+!!!!
+
+#-#
+
+Begin by running 'Filter.bat' as an administrator, then review 'inconsistent_users.json' to ensure that data is correct.
+
+After data (people's names) are confirmed, then run 'Disable All.bat' as Global Administrator to disable all accounts in 'inconsistent_users.json', or if a 'Disabled Accounts'  OU is desired in each department OU, then run 'Disable All with OUs in Each Department.bat' as Global Administrator
+
+#-#
